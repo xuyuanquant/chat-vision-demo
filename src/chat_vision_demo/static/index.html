@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat Vision Demo</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Chat Vision Demo</h1>
+      <div class="meta">
+        <span id="ready">Ready: unknown</span>
+        <span id="driver">Driver: unknown</span>
+        <span id="mode">Mode: screen</span>
+        <span id="sessionStatus">Session: none</span>
+      </div>
+    </div>
+    <div class="urls">
+      <button id="copyUrl">Copy URL</button>
+      <button id="downloadJson">Download JSON</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel controls">
+      <h2>Controls</h2>
+      <div class="window-tool">
+        <div class="tool-title">Target Chat Window</div>
+        <div id="windowBox" class="window-box">
+          <div id="windowRect" class="window-rect">Not detected</div>
+          <div class="window-actions">
+            <button class="action-btn detect" data-action="/api/screen/detect">🔎 Detect</button>
+            <button class="action-btn manual" data-action="/api/screen/once">📸 Manual Once</button>
+            <button class="action-btn auto" data-action="/api/screen/auto">▶ Auto 5s</button>
+            <button class="action-btn pause" id="pauseResume">⏸ Pause</button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="newDemo" class="action-btn new-demo wide" title="Delete the previous cloud session, clear local state, and create a fresh demo session.">↻ New Demo</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <img class="qr" src="/api/qr" alt="Viewer QR">
+      <div class="phone-url" id="phoneUrl"></div>
+    </section>
+
+    <section class="panel chat">
+      <div class="panel-title">
+        <h2>Messages</h2>
+        <button id="toLatest" hidden>Latest</button>
+      </div>
+      <div id="messages" class="messages"></div>
+    </section>
+
+    <section class="panel json">
+      <h2>Structured Data</h2>
+      <pre id="structured"></pre>
+    </section>
+
+    <section class="panel api-history">
+      <h2>API Calls</h2>
+      <div id="apiCalls"></div>
+    </section>
+  </main>
+  <div id="imageOverlay" class="image-overlay" hidden>
+    <button id="closeOverlay" class="overlay-close" aria-label="Close preview">Close</button>
+    <img id="overlayImage" alt="Screenshot preview">
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
