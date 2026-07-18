@@ -25,13 +25,13 @@ pip install -e '.[dev,windows]'
 cp .env.example .env
 ```
 
-Set `CHAT_VISION_API_KEY` in `.env` or the shell.
+The example environment file includes the demo API endpoint, demo key, and default Windows chat process. Adjust `.env` only if you need a different key, bind address, LAN public URL, or target process.
 
 ## Run On Windows
 
 ```powershell
 cd C:\path\to\chat-vision-demo
-$env:CHAT_VISION_API_KEY = "..."
+Copy-Item .env.example .env
 powershell -ExecutionPolicy Bypass -File .\scripts\start-windows-demo.ps1 -ForegroundWindow
 ```
 
