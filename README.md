@@ -158,3 +158,33 @@ CHAT_VISION_API_KEY=... python -m chat_vision_demo.smoke --images C:\path\to\san
 ```
 
 The smoke test checks `/ready`, creates a session, uploads two images, waits for frame terminal status, reads messages with cursor, closes, and optionally deletes.
+
+## FAQ
+
+### Does this hook or automate WeChat?
+
+No. The demo only captures a visible desktop chat window screenshot selected by the local operator. It does not hook, inject, reverse engineer protocols, read local databases, click, scroll, or send messages.
+
+### Can I run the demo from WSL or Linux?
+
+You can run tests and inspect the web UI from WSL/Linux, but real desktop chat window detection and screenshot capture must run from Windows PowerShell. Use `scripts/start-recording-demo.ps1` or `scripts/start-windows-demo.ps1` for the actual demo flow.
+
+### Is the API key exposed to the browser?
+
+No. The API key stays in the local Python process. Browser state only receives whether a key is configured and a masked hint, such as `847c...4f38`.
+
+### Is this production-ready automation?
+
+No. This repository is a demo harness for validating the screenshot-to-session API workflow. It does not include production authentication, monitoring, persistence, queueing, retry policy, or operational hardening.
+
+### Where is the SDK?
+
+The SDK will be published separately. This repository keeps an explicit SDK driver boundary, but `--driver sdk` currently fails clearly instead of falling back to HTTP.
+
+### Can I use my own screenshots instead of live desktop capture?
+
+For cloud validation, use the opt-in smoke test with sanitized screenshots:
+
+```bash
+CHAT_VISION_API_KEY=... python -m chat_vision_demo.smoke --images C:\path\to\sanitized\screenshots --delete
+```
