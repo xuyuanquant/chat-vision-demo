@@ -32,7 +32,7 @@ flowchart LR
 
 Boundary statement: **No hook. No injection. No protocol reverse engineering. No database reading. No auto-send.**
 
-This repository is not the parsing kernel, not a product SDK, and not a client automation framework. It is a local operator-driven Windows demo harness that captures a visible desktop chat window, pushes changed screenshots to a deployed Chat Vision API endpoint, polls frame/message status, and serves:
+This repository is not the parsing kernel, not the SDK source repository, and not a client automation framework. It is a local operator-driven Windows demo harness that captures a visible desktop chat window, pushes changed screenshots to a deployed Chat Vision API endpoint through either raw HTTP or `chat-vision-sdk`, polls frame/message status, and serves:
 
 - desktop control console: `http://127.0.0.1:8080/`
 - optional phone read-only messages page when explicitly bound for LAN access
@@ -45,7 +45,7 @@ See `KNOWN_LIMITATIONS.md` before running this outside a local development machi
 
 ## Get API Access
 
-This demo includes a temporary evaluation API key in `.env.example`. For production use, higher quota, SDK early access, or integration feedback, open a GitHub issue:
+This demo includes a temporary evaluation API key in `.env.example`. For production use, higher quota, SDK usage support, or integration feedback, open a GitHub issue:
 
 ```text
 https://github.com/xuyuanquant/chat-vision-demo/issues
