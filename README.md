@@ -6,7 +6,7 @@ Chat Vision Demo demonstrates a screenshot-to-session workflow for Agent/RPA dev
 
 ![Chat Vision Demo recording](assets/demo.gif)
 
-[Watch the 35-second MP4 demo](assets/demo.mp4)
+[Watch the 26-second accelerated MP4 demo](assets/demo.mp4)
 
 Use cases:
 
