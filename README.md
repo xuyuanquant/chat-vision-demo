@@ -11,6 +11,21 @@ Use cases:
 - multi-frame conversation reconstruction
 - local demo viewer for chat UI parsing APIs
 
+## Workflow
+
+```mermaid
+flowchart LR
+    A[Visible desktop chat window] --> B[Local screenshot capture]
+    B --> C[Chat Vision session]
+    C --> D[Frame processing]
+    D --> E[Messages cursor]
+    D --> F[Frame status]
+    E --> G[Local web viewer]
+    F --> G
+    G --> H[Desktop console]
+    G --> I[Read-only mobile viewer]
+```
+
 Boundary statement: **No hook. No injection. No protocol reverse engineering. No database reading. No auto-send.**
 
 This repository is not the parsing kernel, not a product SDK, and not a client automation framework. It is a local operator-driven Windows demo harness that captures a visible desktop chat window, pushes changed screenshots to a deployed Chat Vision API endpoint, polls frame/message status, and serves:
@@ -23,6 +38,14 @@ The API key stays in the local Python process. It is not returned to the browser
 The SDK will be published separately. This repository keeps an SDK driver boundary for future integration, but the current release is the demo harness only.
 
 See `KNOWN_LIMITATIONS.md` before running this outside a local development machine.
+
+## Get API Access
+
+This demo includes a temporary evaluation API key in `.env.example`. For production use, higher quota, SDK early access, or integration feedback, open a GitHub issue:
+
+```text
+https://github.com/xuyuanquant/chat-vision-demo/issues
+```
 
 ## Install
 
