@@ -143,7 +143,13 @@ The desktop Viewer shows `API Calls` with screenshot thumbnails, request params,
 
 ## SDK Mode
 
-The demo supports an SDK driver backed by `chat-vision-sdk==0.1.0`. The Windows install extra includes the SDK package:
+The demo supports an SDK driver backed by `chat-vision-sdk==0.1.0`. SDK source and release notes are available at:
+
+```text
+https://github.com/xuyuanquant/chat-vision-sdk
+```
+
+The Windows install extra includes the SDK package:
 
 ```bash
 pip install -e '.[windows]'
@@ -203,7 +209,13 @@ No. This repository is a demo harness for validating the screenshot-to-session A
 
 ### Where is the SDK?
 
-The Python SDK package is `chat-vision-sdk==0.1.0`. This demo can run through it with `CHAT_VISION_DRIVER=sdk` or `--driver sdk`.
+The Python SDK package is `chat-vision-sdk==0.1.0`, and its source repository is:
+
+```text
+https://github.com/xuyuanquant/chat-vision-sdk
+```
+
+This demo can run through the SDK with `CHAT_VISION_DRIVER=sdk` or `--driver sdk`.
 
 ### Can I use my own screenshots instead of live desktop capture?
 
