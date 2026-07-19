@@ -13,16 +13,16 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
     Copy-Item ".env.example" ".env"
 }
 
-$argsList = @(
-    "-ProjectDir", $ProjectDir,
-    "-Port", "$Port",
-    "-Bind", $Bind,
-    "-ForegroundWindow",
-    "-SkipGitPull"
-)
-
-if ($PublicUrl) {
-    $argsList += @("-PublicUrl", $PublicUrl)
+$startArgs = @{
+    ProjectDir = $ProjectDir
+    Port = $Port
+    Bind = $Bind
+    ForegroundWindow = $true
+    SkipGitPull = $true
 }
 
-& (Join-Path $PSScriptRoot "start-windows-demo.ps1") @argsList
+if ($PublicUrl) {
+    $startArgs.PublicUrl = $PublicUrl
+}
+
+& (Join-Path $PSScriptRoot "start-windows-demo.ps1") @startArgs
