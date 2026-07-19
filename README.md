@@ -4,6 +4,10 @@
 
 Chat Vision Demo demonstrates a screenshot-to-session workflow for Agent/RPA developers. It pushes desktop chat window screenshots to a Chat Vision API session, then displays reconstructed messages, frame status, and API calls in a local web viewer.
 
+![Chat Vision Demo recording](assets/demo.gif)
+
+[Watch the 35-second MP4 demo](assets/demo.mp4)
+
 Use cases:
 
 - Agent/RPA visual state parsing
