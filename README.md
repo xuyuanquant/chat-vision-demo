@@ -39,7 +39,7 @@ This repository is not the parsing kernel, not a product SDK, and not a client a
 
 The API key stays in the local Python process. It is not returned to the browser, embedded in JavaScript, included in JSON downloads, or placed in the QR code.
 
-The SDK will be published separately. This repository keeps an SDK driver boundary for future integration, but the current release is the demo harness only.
+The demo defaults to the raw HTTP driver and can also run through `chat-vision-sdk==0.1.0` with `CHAT_VISION_DRIVER=sdk` or `--driver sdk`.
 
 See `KNOWN_LIMITATIONS.md` before running this outside a local development machine.
 
@@ -143,7 +143,31 @@ The desktop Viewer shows `API Calls` with screenshot thumbnails, request params,
 
 ## SDK Mode
 
-The SDK will be published separately. The code keeps an explicit SDK driver boundary, but no verified official Python SDK adapter is implemented in this repository. `--driver sdk` fails clearly and does not fall back to HTTP.
+The demo supports an SDK driver backed by `chat-vision-sdk==0.1.0`. The Windows install extra includes the SDK package:
+
+```bash
+pip install -e '.[windows]'
+```
+
+Enable SDK mode in `.env`:
+
+```text
+CHAT_VISION_DRIVER=sdk
+```
+
+Or pass it on the command line:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-windows-demo.ps1 -Driver sdk -ForegroundWindow
+```
+
+For recording/demo startup:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-recording-demo.ps1 -Driver sdk
+```
+
+The SDK driver uses the same local viewer, capture loop, session lifecycle, frame polling, and messages cursor UI as the raw HTTP driver.
 
 ## Tests
 
@@ -179,7 +203,7 @@ No. This repository is a demo harness for validating the screenshot-to-session A
 
 ### Where is the SDK?
 
-The SDK will be published separately. This repository keeps an explicit SDK driver boundary, but `--driver sdk` currently fails clearly instead of falling back to HTTP.
+The Python SDK package is `chat-vision-sdk==0.1.0`. This demo can run through it with `CHAT_VISION_DRIVER=sdk` or `--driver sdk`.
 
 ### Can I use my own screenshots instead of live desktop capture?
 

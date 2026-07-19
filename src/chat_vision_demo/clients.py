@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib
 import json
+from dataclasses import asdict, is_dataclass
+from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -132,31 +134,124 @@ class SdkUnavailable(ApiError):
 
 class SdkChatVisionClient(ChatVisionClient):
     label = "Python SDK"
-    candidate_modules = ("chat_vision", "chat_vision_struct", "chatvision")
+    sdk_module_name = "chat_vision"
 
     def __init__(self, base_url: str = API_BASE_DEFAULT, api_key: str | None = None):
         self.base_url = base_url
         self.api_key = api_key
-        self.reason = self._detect_reason()
-        raise SdkUnavailable(self.reason, code="sdk_unavailable")
+        self.sdk = self._load_sdk()
+        self.client = self.sdk.ChatVision(api_key=api_key, base_url=base_url)
+        self.sessions: dict[str, Any] = {}
 
-    def _detect_reason(self) -> str:
-        missing = []
-        for name in self.candidate_modules:
-            try:
-                importlib.import_module(name)
-                return f"Installed module {name!r} was found, but no verified adapter mapping is implemented yet."
-            except ModuleNotFoundError:
-                missing.append(name)
-        return "No official Chat Vision Python SDK module was found. Tried: " + ", ".join(missing)
+    def _load_sdk(self) -> Any:
+        try:
+            sdk = importlib.import_module(self.sdk_module_name)
+        except ModuleNotFoundError as exc:
+            raise SdkUnavailable(
+                "chat-vision-sdk is not installed. Install with: pip install -e '.[sdk]'",
+                code="sdk_unavailable",
+            ) from exc
+        if not hasattr(sdk, "ChatVision"):
+            raise SdkUnavailable(
+                "Installed chat-vision-sdk does not expose ChatVision.",
+                code="sdk_unavailable",
+            )
+        return sdk
 
-    def ready(self) -> dict[str, Any]: raise SdkUnavailable(self.reason, code="sdk_unavailable")
-    def create_session(self) -> dict[str, Any]: raise SdkUnavailable(self.reason, code="sdk_unavailable")
-    def push_frame(self, session_id: str, frame_id: str, image_path: Path, captured_at: str | None) -> dict[str, Any]: raise SdkUnavailable(self.reason, code="sdk_unavailable")
-    def get_frame(self, session_id: str, frame_id: str) -> dict[str, Any]: raise SdkUnavailable(self.reason, code="sdk_unavailable")
-    def get_messages(self, session_id: str, cursor: str | None, limit: int = 50) -> dict[str, Any]: raise SdkUnavailable(self.reason, code="sdk_unavailable")
-    def close_session(self, session_id: str) -> dict[str, Any]: raise SdkUnavailable(self.reason, code="sdk_unavailable")
-    def delete_session(self, session_id: str) -> dict[str, Any]: raise SdkUnavailable(self.reason, code="sdk_unavailable")
+    def _call(self, func: Any) -> dict[str, Any]:
+        try:
+            return _model_to_dict(func())
+        except ApiError:
+            raise
+        except Exception as exc:
+            raise _sdk_error_to_api_error(self.sdk, exc) from exc
+
+    def _session(self, session_id: str) -> Any:
+        session = self.sessions.get(session_id)
+        if session is None:
+            raise ApiError(
+                "SDK session handle is not available in this process.",
+                code="sdk_session_not_found",
+            )
+        return session
+
+    def ready(self) -> dict[str, Any]:
+        return self._call(self.client.ready)
+
+    def create_session(self) -> dict[str, Any]:
+        def create() -> Any:
+            session = self.client.sessions.create(
+                platform=CREATE_SESSION_DEFAULT["platform"],
+                retention_mode=CREATE_SESSION_DEFAULT["retention_mode"],
+            )
+            self.sessions[session.session_id] = session
+            return session.info
+        return self._call(create)
+
+    def push_frame(self, session_id: str, frame_id: str, image_path: Path, captured_at: str | None) -> dict[str, Any]:
+        def push() -> Any:
+            handle = self._session(session_id).push(
+                image_path,
+                frame_id=frame_id,
+                captured_at=captured_at,
+            )
+            return handle.frame
+        return self._call(push)
+
+    def get_frame(self, session_id: str, frame_id: str) -> dict[str, Any]:
+        return self._call(lambda: self._session(session_id).get_frame(frame_id))
+
+    def get_messages(self, session_id: str, cursor: str | None, limit: int = 50) -> dict[str, Any]:
+        return self._call(lambda: self._session(session_id).messages.list(cursor=cursor, limit=limit))
+
+    def close_session(self, session_id: str) -> dict[str, Any]:
+        return self._call(lambda: self._session(session_id).close())
+
+    def delete_session(self, session_id: str) -> dict[str, Any]:
+        return self._call(lambda: self._session(session_id).delete())
+
+
+def _sdk_error_to_api_error(sdk: Any, exc: Exception) -> ApiError:
+    api_error_type = getattr(sdk, "APIError", None)
+    network_error_type = getattr(sdk, "NetworkError", None)
+    chat_vision_error_type = getattr(sdk, "ChatVisionError", None)
+    if api_error_type and isinstance(exc, api_error_type):
+        return ApiError(
+            str(exc),
+            code=getattr(exc, "code", None) or "sdk_api_error",
+            status_code=getattr(exc, "status_code", None),
+            request_id=getattr(exc, "request_id", None),
+            details=getattr(exc, "details", None),
+        )
+    if network_error_type and isinstance(exc, network_error_type):
+        return ApiError(
+            str(exc),
+            code="connection_failed",
+            request_id=getattr(exc, "request_id", None),
+        )
+    if chat_vision_error_type and isinstance(exc, chat_vision_error_type):
+        return ApiError(str(exc), code="sdk_error")
+    return ApiError(str(exc), code="sdk_error")
+
+
+def _model_to_dict(value: Any) -> dict[str, Any]:
+    if is_dataclass(value):
+        data = asdict(value)
+    elif isinstance(value, dict):
+        data = dict(value)
+    else:
+        data = dict(getattr(value, "__dict__", {}))
+    return _jsonable(data)
+
+
+def _jsonable(value: Any) -> Any:
+    if isinstance(value, datetime):
+        return value.isoformat().replace("+00:00", "Z")
+    if isinstance(value, dict):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_jsonable(item) for item in value]
+    return value
 
 
 def _guess_content_type(path: Path) -> str:

@@ -1,5 +1,7 @@
 param(
     [string]$ProjectDir = (Resolve-Path "$PSScriptRoot\..").Path,
+    [ValidateSet("http", "sdk")]
+    [string]$Driver = "http",
     [int]$Port = 8080,
     [string]$Bind = "127.0.0.1",
     [string]$PublicUrl = ""
@@ -15,6 +17,7 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
 
 $startArgs = @{
     ProjectDir = $ProjectDir
+    Driver = $Driver
     Port = $Port
     Bind = $Bind
     ForegroundWindow = $true

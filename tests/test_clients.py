@@ -1,7 +1,9 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+from chat_vision_demo import clients
 from chat_vision_demo.clients import ChatVisionClient, HttpChatVisionClient, SdkChatVisionClient, SdkUnavailable
 
 
@@ -34,10 +36,66 @@ def test_contract_shared_with_fake_client(tmp_path: Path) -> None:
     contract(FakeClient(), tmp_path)
 
 
-def test_sdk_contract_skipped_when_unavailable() -> None:
+class FakeSdkChatVision:
+    def __init__(self, api_key=None, *, base_url="https://x"):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.sessions = FakeSessions()
+
+    def ready(self):
+        return {"ok": True}
+
+
+class FakeSessions:
+    def create(self, *, platform="unknown", retention_mode="temporary"):
+        return FakeSession()
+
+
+class FakeSession:
+    session_id = "s1"
+    info = {
+        "session_id": "s1",
+        "status": "open",
+        "created_at": "2026-07-15T00:00:00Z",
+        "expires_at": "2026-07-16T00:00:00Z",
+        "retention": {"mode": "temporary", "ttl_seconds": 86400},
+        "request_id": "r-create",
+    }
+
+    def __init__(self):
+        self.messages = FakeMessages()
+
+    def push(self, file, *, frame_id=None, captured_at=None):
+        return SimpleNamespace(frame={"session_id": "s1", "frame_id": frame_id, "status": "queued", "accepted_at": captured_at, "request_id": "r-push"})
+
+    def get_frame(self, frame_id):
+        return {"session_id": "s1", "frame_id": frame_id, "status": "completed", "accepted_at": "2026-07-15T00:00:00Z", "request_id": "r-frame"}
+
+    def close(self):
+        return {"session_id": "s1", "status": "closed", "request_id": "r-close"}
+
+    def delete(self):
+        return {"deleted": True, "request_id": "r-delete"}
+
+
+class FakeMessages:
+    def list(self, *, cursor=None, limit=50):
+        return {"session_id": "s1", "items": [], "next_cursor": "c1", "has_more": False, "request_id": "r-msg"}
+
+
+def test_sdk_contract_with_fake_sdk(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(clients.importlib, "import_module", lambda name: SimpleNamespace(ChatVision=FakeSdkChatVision))
+    contract(SdkChatVisionClient(api_key="x"), tmp_path)
+
+
+def test_sdk_unavailable_when_package_missing(monkeypatch) -> None:
+    def missing(name):
+        raise ModuleNotFoundError(name)
+
+    monkeypatch.setattr(clients.importlib, "import_module", missing)
     with pytest.raises(SdkUnavailable) as exc:
         SdkChatVisionClient(api_key="x")
-    assert "No official Chat Vision Python SDK module" in exc.value.message or "no verified adapter" in exc.value.message
+    assert "chat-vision-sdk is not installed" in exc.value.message
 
 
 def test_http_client_error_parsing(monkeypatch) -> None:

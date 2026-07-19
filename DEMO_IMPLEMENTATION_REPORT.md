@@ -2,7 +2,7 @@
 
 ## 技术栈
 
-Python 3.10+，`requests` HTTP 客户端，标准库 `http.server` 本地 Viewer，SSE 推送。可选依赖：`mss` 用于 Windows 屏幕截图，`qrcode[pil]` 用于二维码，`pytest` 用于测试。
+Python 3.10+，`requests` HTTP 客户端，`chat-vision-sdk==0.1.0` SDK 客户端，标准库 `http.server` 本地 Viewer，SSE 推送。可选依赖：`mss` 用于 Windows 屏幕截图，`qrcode[pil]` 用于二维码，`pytest` 用于测试。
 
 ## 当前目标
 
@@ -15,11 +15,11 @@ Python 3.10+，`requests` HTTP 客户端，标准库 `http.server` 本地 Viewer
 5. 手机扫码进入只读 `/mobile` 消息页；
 6. API Key 只存在于本地 Python 进程。
 
-不包含解析内核、SDK、目录回放、宣传页、账户、支付、平台 Hook、注入、协议逆向、数据库读取、自动发送、自动点击、自动滚动或远程手机控制。
+不包含解析内核、目录回放、宣传页、账户、支付、平台 Hook、注入、协议逆向、数据库读取、自动发送、自动点击、自动滚动或远程手机控制。
 
 ## 目录结构
 
-- `src/chat_vision_demo/clients.py`：统一客户端接口、Raw HTTP 驱动、SDK 不可用占位。
+- `src/chat_vision_demo/clients.py`：统一客户端接口、Raw HTTP 驱动、SDK 驱动适配。
 - `src/chat_vision_demo/runner.py`：Session、Frame、消息 cursor 轮询协调。
 - `src/chat_vision_demo/capture.py`：屏幕截图、变化检测、临时截图清理。
 - `src/chat_vision_demo/windows_window.py`：Windows 目标聊天窗口定位、DPI-aware 坐标、前台/topmost 处理。
@@ -47,14 +47,19 @@ Python 3.10+，`requests` HTTP 客户端，标准库 `http.server` 本地 Viewer
 
 Raw HTTP 已实现：ready、create、push frame、frame status、messages cursor、close、delete；处理 `X-API-Key`、multipart、`202/200`、ErrorResponse、网络超时/连接失败和 request id。
 
-SDK 驱动未接入真实 SDK。当前环境未发现可验证的官方 SDK 包名或接口；代码只提供明确的 SDK 不可用错误，不会静默 fallback 到 HTTP。
+SDK 驱动已接入 `chat-vision-sdk==0.1.0`：复用 SDK 的 `ChatVision`、sessions、frame push/status、messages cursor、close、delete 能力，并将 SDK dataclass 返回值转换成本地 Viewer 现有的 dict 状态结构。`CHAT_VISION_DRIVER=sdk` 或 `--driver sdk` 可启用；如果 SDK 未安装，会给出明确错误，不会静默 fallback 到 HTTP。
 
 ## 启动命令
 
 ```powershell
 cd C:\path\to\chat-vision-demo
-$env:CHAT_VISION_API_KEY = "..."
 powershell -ExecutionPolicy Bypass -File .\scripts\start-windows-demo.ps1 -ForegroundWindow
+```
+
+SDK 模式：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-windows-demo.ps1 -Driver sdk -ForegroundWindow
 ```
 
 默认桌面 Viewer：
