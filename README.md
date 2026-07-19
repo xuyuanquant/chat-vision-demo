@@ -49,6 +49,8 @@ https://github.com/xuyuanquant/chat-vision-demo/issues
 
 ## Install
 
+For real desktop window detection and screenshot capture, run the demo from **Windows PowerShell**. WSL/Linux can run tests and serve the web UI, but it cannot capture a normal Windows desktop chat window for this demo.
+
 ```bash
 cd chat-vision-demo
 python3 -m venv .venv
@@ -60,6 +62,17 @@ cp .env.example .env
 The example environment file includes the demo API endpoint, demo key, and default Windows chat process. Adjust `.env` only if you need a different key, bind address, LAN public URL, or target process.
 
 ## Run On Windows
+
+Recommended one-command recording/demo startup:
+
+```powershell
+cd C:\path\to\chat-vision-demo
+powershell -ExecutionPolicy Bypass -File .\scripts\start-recording-demo.ps1
+```
+
+The recording script copies `.env.example` to `.env` when needed, starts from Windows Python, skips `git pull`, and enables foreground-window capture.
+
+Manual startup:
 
 ```powershell
 cd C:\path\to\chat-vision-demo

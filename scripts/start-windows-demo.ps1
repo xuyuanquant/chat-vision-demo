@@ -75,8 +75,12 @@ if (Test-Path $pidFile) {
 }
 
 if (-not $SkipGitPull) {
-    git pull --ff-only
-    if ($LASTEXITCODE -ne 0) { throw "git pull failed with exit code $LASTEXITCODE" }
+    if (Test-Path (Join-Path $ProjectDir ".git")) {
+        git pull --ff-only
+        if ($LASTEXITCODE -ne 0) { throw "git pull failed with exit code $LASTEXITCODE" }
+    } else {
+        Write-Host "No .git directory found; skipping git pull."
+    }
 }
 
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
