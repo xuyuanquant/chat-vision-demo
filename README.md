@@ -1,10 +1,19 @@
-# Chat Vision Demo Harness
+# Chat Vision Demo
 
-Local Windows demo harness for exercising a deployed Chat Vision API endpoint with desktop chat window screenshots.
+## What Is This?
+
+Chat Vision Demo demonstrates a screenshot-to-session workflow for Agent/RPA developers. It pushes desktop chat window screenshots to a Chat Vision API session, then displays reconstructed messages, frame status, and API calls in a local web viewer.
+
+Use cases:
+
+- Agent/RPA visual state parsing
+- desktop chat screenshot structuring
+- multi-frame conversation reconstruction
+- local demo viewer for chat UI parsing APIs
 
 Boundary statement: **No hook. No injection. No protocol reverse engineering. No database reading. No auto-send.**
 
-This repository is not the parsing kernel, not a product SDK, and not a client automation framework. It is a local operator-driven demo harness that captures a visible desktop chat window, pushes changed screenshots to a Chat Vision session, polls frame/message status, and serves:
+This repository is not the parsing kernel, not a product SDK, and not a client automation framework. It is a local operator-driven Windows demo harness that captures a visible desktop chat window, pushes changed screenshots to a deployed Chat Vision API endpoint, polls frame/message status, and serves:
 
 - desktop control console: `http://127.0.0.1:8080/`
 - optional phone read-only messages page when explicitly bound for LAN access
