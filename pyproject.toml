@@ -10,8 +10,8 @@ dependencies = [
 [project.optional-dependencies]
 screen = ["mss>=9.0"]
 qr = ["qrcode[pil]>=7.4"]
-sdk = ["chat-vision-sdk==0.1.0"]
-windows = ["mss>=9.0", "qrcode[pil]>=7.4", "chat-vision-sdk==0.1.0"]
+sdk = ["chat-vision-sdk==0.1.1"]
+windows = ["mss>=9.0", "qrcode[pil]>=7.4", "chat-vision-sdk==0.1.1"]
 dev = ["pytest>=8.0"]
 
 [project.scripts]

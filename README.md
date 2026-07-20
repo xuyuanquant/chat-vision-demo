@@ -39,7 +39,7 @@ This repository is not the parsing kernel, not the SDK source repository, and no
 
 The API key stays in the local Python process. It is not returned to the browser, embedded in JavaScript, included in JSON downloads, or placed in the QR code.
 
-The demo defaults to the raw HTTP driver and can also run through `chat-vision-sdk==0.1.0` with `CHAT_VISION_DRIVER=sdk` or `--driver sdk`.
+The demo defaults to the raw HTTP driver and can also run through `chat-vision-sdk==0.1.1` with `CHAT_VISION_DRIVER=sdk` or `--driver sdk`.
 
 See `KNOWN_LIMITATIONS.md` before running this outside a local development machine.
 
@@ -143,7 +143,7 @@ The desktop Viewer shows `API Calls` with screenshot thumbnails, request params,
 
 ## SDK Mode
 
-The demo supports an SDK driver backed by `chat-vision-sdk==0.1.0`. SDK source and release notes are available at:
+The demo supports an SDK driver backed by `chat-vision-sdk==0.1.1`. SDK source and release notes are available at:
 
 ```text
 https://github.com/xuyuanquant/chat-vision-sdk
@@ -209,7 +209,7 @@ No. This repository is a demo harness for validating the screenshot-to-session A
 
 ### Where is the SDK?
 
-The Python SDK package is `chat-vision-sdk==0.1.0`, and its source repository is:
+The Python SDK package is `chat-vision-sdk==0.1.1`, and its source repository is:
 
 ```text
 https://github.com/xuyuanquant/chat-vision-sdk

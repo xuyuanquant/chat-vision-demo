@@ -1,6 +1,6 @@
 # Known Limitations
 
-This repository is a demo harness only. It does not include the parsing kernel, model logic, production service implementation, or SDK source code. The demo can consume the published Python SDK package `chat-vision-sdk==0.1.0`.
+This repository is a demo harness only. It does not include the parsing kernel, model logic, production service implementation, or SDK source code. The demo can consume the published Python SDK package `chat-vision-sdk==0.1.1`.
 
 - API result quality depends on the configured `CHAT_VISION_API_BASE` endpoint and the service behind it.
 - Screen capture is a demo feature for local operator-driven testing, not a supported ingestion primitive for unattended production systems.
