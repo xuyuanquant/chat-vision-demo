@@ -72,8 +72,26 @@ function Test-Dependencies {
     $python = Get-BasePython
     $sitePackages = Join-Path $ProjectDir ".venv\Lib\site-packages"
     $env:PYTHONPATH = "$ProjectDir\src;$sitePackages"
-    & $python -c "import chat_vision_demo, chat_vision, mss, qrcode, pytest; raise SystemExit(0 if getattr(chat_vision, '__version__', '') == '0.1.1' else 1)" 2>$null
-    return $LASTEXITCODE -eq 0
+    $oldErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $python -c "import chat_vision_demo, chat_vision, mss, qrcode, pytest; raise SystemExit(0 if getattr(chat_vision, '__version__', '') == '0.1.1' else 1)" *> $null
+        return $LASTEXITCODE -eq 0
+    } finally {
+        $ErrorActionPreference = $oldErrorActionPreference
+    }
+}
+
+function New-CleanVenv {
+    if (Test-Path ".venv") {
+        Write-Host "Existing .venv is incomplete; rebuilding it."
+        Remove-Item -Recurse -Force ".venv"
+    }
+    py -3 -m venv .venv
+    if ($LASTEXITCODE -ne 0) { throw "python venv creation failed with exit code $LASTEXITCODE" }
+    if (-not (Test-Path ".venv\Scripts\python.exe")) {
+        throw "python venv creation did not produce .venv\Scripts\python.exe"
+    }
 }
 
 Set-Location $ProjectDir
@@ -122,8 +140,7 @@ if (-not $SkipGitPull) {
 }
 
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
-    py -3 -m venv .venv
-    if ($LASTEXITCODE -ne 0) { throw "python venv creation failed with exit code $LASTEXITCODE" }
+    New-CleanVenv
 }
 
 if (-not $NoInstall -and ($ForceInstall -or -not (Test-Dependencies))) {
