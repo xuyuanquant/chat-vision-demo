@@ -9,9 +9,11 @@ param(
     [string]$WindowProcess = "",
     [string]$WindowTitle = "",
     [switch]$ForegroundWindow,
+    [switch]$NoForegroundWindow,
     [string]$PublicUrl = "",
     [switch]$SkipGitPull,
-    [switch]$NoInstall
+    [switch]$NoInstall,
+    [switch]$ForceInstall
 )
 
 $ErrorActionPreference = "Stop"
@@ -36,6 +38,42 @@ function Get-PrimaryLanUrl {
         return "http://$($addresses[0]):$Port"
     }
     return ""
+}
+
+function Stop-ProcessTree {
+    param([int]$ProcessId)
+    $children = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object { $_.ParentProcessId -eq $ProcessId })
+    foreach ($child in $children) {
+        Stop-ProcessTree -ProcessId ([int]$child.ProcessId)
+    }
+    $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    if ($process) {
+        Stop-Process -Id $process.Id -Force
+    }
+}
+
+function Get-BasePython {
+    $cfg = Join-Path $ProjectDir ".venv\pyvenv.cfg"
+    if (Test-Path $cfg) {
+        foreach ($line in Get-Content $cfg) {
+            if ($line -match "^\s*home\s*=\s*(.+?)\s*$") {
+                $candidate = Join-Path $Matches[1] "python.exe"
+                if (Test-Path $candidate) {
+                    return $candidate
+                }
+            }
+        }
+    }
+    return (Join-Path $ProjectDir ".venv\Scripts\python.exe")
+}
+
+function Test-Dependencies {
+    $python = Get-BasePython
+    $sitePackages = Join-Path $ProjectDir ".venv\Lib\site-packages"
+    $env:PYTHONPATH = "$ProjectDir\src;$sitePackages"
+    & $python -c "import chat_vision_demo, chat_vision, mss, qrcode, pytest; raise SystemExit(0 if getattr(chat_vision, '__version__', '') == '0.1.1' else 1)" 2>$null
+    return $LASTEXITCODE -eq 0
 }
 
 Set-Location $ProjectDir
@@ -68,7 +106,7 @@ if (Test-Path $pidFile) {
     if ($oldPid) {
         $oldProcess = Get-Process -Id ([int]$oldPid) -ErrorAction SilentlyContinue
         if ($oldProcess) {
-            Stop-Process -Id $oldProcess.Id -Force
+            Stop-ProcessTree -ProcessId $oldProcess.Id
             Start-Sleep -Milliseconds 500
         }
     }
@@ -88,9 +126,11 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
     if ($LASTEXITCODE -ne 0) { throw "python venv creation failed with exit code $LASTEXITCODE" }
 }
 
-if (-not $NoInstall) {
+if (-not $NoInstall -and ($ForceInstall -or -not (Test-Dependencies))) {
     .\.venv\Scripts\python.exe -m pip install -e ".[dev,windows]"
     if ($LASTEXITCODE -ne 0) { throw "pip install failed with exit code $LASTEXITCODE" }
+} elseif (-not $NoInstall) {
+    Write-Host "Dependencies already installed; skipping pip install. Use -ForceInstall to reinstall."
 }
 
 if (-not $ApiKey) {
@@ -105,51 +145,105 @@ $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $stdout = Join-Path $logDir "chat-vision-demo-$timestamp.out.log"
 $stderr = Join-Path $logDir "chat-vision-demo-$timestamp.err.log"
 $meta = Join-Path $logDir "chat-vision-demo-$timestamp.meta.txt"
+$runnerScript = Join-Path $runDir "run-chat-vision-demo.py"
+$runnerConfig = Join-Path $runDir "run-chat-vision-demo.json"
 
 $env:CHAT_VISION_API_KEY = $ApiKey
 
-$argsList = @(
-    "-u",
-    "-m", "chat_vision_demo.cli",
-    "--driver", $Driver,
-    "--bind", $Bind,
-    "--port", "$Port"
-)
-
+$cliArgs = @("--driver", $Driver, "--bind", $Bind, "--port", "$Port")
 if ($PublicUrl) {
-    $argsList += @("--public-url", $PublicUrl)
+    $cliArgs += @("--public-url", $PublicUrl)
 }
-
 if ($ScreenRect) {
-    $argsList += @("--screen-rect", $ScreenRect)
+    $cliArgs += @("--screen-rect", $ScreenRect)
 } else {
     if ($WindowProcess) {
-        $argsList += @("--windows-window-process", $WindowProcess)
+        $cliArgs += @("--windows-window-process", $WindowProcess)
     }
     if ($WindowTitle) {
-        $argsList += @("--windows-window-title", $WindowTitle)
+        $cliArgs += @("--windows-window-title", $WindowTitle)
     }
 }
-if ($ForegroundWindow) {
-    $argsList += "--foreground-window"
+$useForegroundWindow = $ForegroundWindow -or -not $NoForegroundWindow
+if ($useForegroundWindow) {
+    $cliArgs += "--foreground-window"
 }
 
+$python = Get-BasePython
+$sitePackages = Join-Path $ProjectDir ".venv\Lib\site-packages"
+$config = @{
+    project_dir = $ProjectDir
+    site_packages = $sitePackages
+    api_key = $ApiKey
+    stdout = $stdout
+    stderr = $stderr
+    args = $cliArgs
+}
+$config | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 $runnerConfig
+@'
+import json
+import os
+import sys
+from pathlib import Path
+
+config_path = Path(sys.argv[1])
+config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+project_dir = config["project_dir"]
+os.chdir(project_dir)
+sys.path.insert(0, str(Path(project_dir) / "src"))
+sys.path.insert(0, config["site_packages"])
+os.environ["CHAT_VISION_API_KEY"] = config["api_key"]
+stdout = open(config["stdout"], "a", buffering=1, encoding="utf-8")
+stderr = open(config["stderr"], "a", buffering=1, encoding="utf-8")
+sys.stdout = stdout
+sys.stderr = stderr
+
+from chat_vision_demo.cli import main
+
+raise SystemExit(main(config["args"]))
+'@ | Set-Content -Encoding UTF8 $runnerScript
+
 $process = Start-Process `
-    -FilePath ".\.venv\Scripts\python.exe" `
-    -ArgumentList $argsList `
+    -FilePath $python `
+    -ArgumentList @($runnerScript, $runnerConfig) `
     -WorkingDirectory $ProjectDir `
-    -RedirectStandardOutput $stdout `
-    -RedirectStandardError $stderr `
     -PassThru
 
-$process.Id | Set-Content $pidFile
+$listenPid = $null
+for ($i = 0; $i -lt 50; $i++) {
+    Start-Sleep -Milliseconds 200
+    $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($conn) {
+        $listenPid = [int]$conn.OwningProcess
+        break
+    }
+    $process.Refresh()
+    if ($process.HasExited) {
+        break
+    }
+}
+
+if (-not $listenPid) {
+    $process.Refresh()
+    if ($process.HasExited) {
+        $errTail = ""
+        if (Test-Path $stderr) {
+            $errTail = (Get-Content $stderr -Tail 20 -ErrorAction SilentlyContinue) -join "`n"
+        }
+        throw "Chat Vision Demo exited before listening on port $Port. $errTail"
+    }
+}
+
+$pidToWrite = if ($listenPid) { $listenPid } else { $process.Id }
+$pidToWrite | Set-Content $pidFile
 $stdout | Set-Content (Join-Path $runDir "latest-stdout.txt")
 $stderr | Set-Content (Join-Path $runDir "latest-stderr.txt")
 $meta | Set-Content (Join-Path $runDir "latest-meta.txt")
 
 @"
 Started Chat Vision Demo
-PID: $($process.Id)
+PID: $pidToWrite
 Driver: $Driver
 Mode: screen
 Local: http://127.0.0.1:$Port

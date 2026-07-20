@@ -53,7 +53,7 @@ https://github.com/xuyuanquant/chat-vision-demo/issues
 
 ## Install
 
-For real desktop window detection and screenshot capture, run the demo from **Windows PowerShell**. WSL/Linux can run tests and serve the web UI, but it cannot capture a normal Windows desktop chat window for this demo.
+For real desktop window detection and screenshot capture, unzip or clone the project into a normal Windows path such as `C:\Users\<you>\Desktop\src\chat-vision-demo`, then run the demo from **Windows PowerShell**. WSL/Linux can run tests and serve the web UI, but it cannot capture a normal Windows desktop chat window for this demo. Do not start the Windows demo from a `\\wsl.localhost\...` path.
 
 ```bash
 cd chat-vision-demo
@@ -84,7 +84,7 @@ Copy-Item .env.example .env
 powershell -ExecutionPolicy Bypass -File .\scripts\start-windows-demo.ps1 -ForegroundWindow
 ```
 
-The script runs on Windows, creates/reuses `.venv`, installs dependencies unless `-NoInstall` is used, starts the demo on `127.0.0.1` by default, and writes logs:
+The script runs on Windows, creates/reuses `.venv`, installs dependencies only when required, starts the demo on `127.0.0.1` by default, and writes logs:
 
 ```text
 logs\chat-vision-demo-YYYYMMDD-HHMMSS.out.log
@@ -97,6 +97,8 @@ Stop it with:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\stop-windows-demo.ps1
 ```
+
+Use `-ForceInstall` only when you want to reinstall dependencies.
 
 ## Demo Flow
 

@@ -121,12 +121,15 @@ def bring_to_foreground(hwnd: int) -> bool:
     HWND_NOTOPMOST = -2
     SWP_NOSIZE = 0x0001
     SWP_NOMOVE = 0x0002
+    SWP_SHOWWINDOW = 0x0040
     VK_MENU = 0x12
     KEYEVENTF_KEYUP = 0x0002
 
     if user32.IsIconic(hwnd):
+        user32.ShowWindowAsync(hwnd, SW_RESTORE)
         user32.ShowWindow(hwnd, SW_RESTORE)
     else:
+        user32.ShowWindowAsync(hwnd, SW_SHOW)
         user32.ShowWindow(hwnd, SW_SHOW)
 
     foreground_hwnd = user32.GetForegroundWindow()
@@ -151,8 +154,12 @@ def bring_to_foreground(hwnd: int) -> bool:
         user32.keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0)
         user32.SetForegroundWindow(hwnd)
 
-        user32.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
-        user32.SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
+        if hasattr(user32, "SwitchToThisWindow"):
+            user32.SwitchToThisWindow(hwnd, True)
+
+        user32.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
+        time.sleep(0.2)
+        user32.SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
         user32.SetForegroundWindow(hwnd)
     finally:
         if attached_foreground:
